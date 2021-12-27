@@ -1,16 +1,17 @@
 ### https://dbsk-web.herokuapp.com
 
-from flask import Flask
+from flask import Flask, app, request, render_template, session
 import yfinance as yf
+import json   #載入json
 import pandas as pd
+import requests #如果最後沒有使用alpha vantage可刪除
+from datetime import datetime
 
 app = Flask(__name__) ###__name__ 代表目前執行的模組
 
 @app.route("/") 
 def index():
     return "<h1>Hello Flask</h1>"
-
-
 
 
 @app.route("/info") 
