@@ -32,6 +32,74 @@ def index():
     return render_template("index.html")  #連到index.html
 
 
+# 使用 POST 方法接收表單
+@app.route("/result", methods=["GET", "POST"])
+def calculate():
+    total_start_value = int(request.form["start-value"])
+    start_time = request.form["start-date"]
+    end_time = request.form["end-date"]
+    company1 = request.form["ticker1"]
+    company1_portion = request.form["ticker1-portion"]
+    company2 = request.form["ticker2"]
+    company2_portion = request.form["ticker2-portion"]
+    company3 = request.form["ticker3"]
+    company3_portion = request.form["ticker3-portion"]
+    
+    # 建立公司與投資比例列表
+    companies_input = [company1, company2, company3]
+    portion_input = [company1_portion, company2_portion, company3_portion]
+    companies = [i for i in companies_input if i!= ""]
+    portion = [int(i)/100 for i in portion_input if i!= ""]
+    invest_start_lst = [ i * total_start_value for i in portion] #個股投資金額，例：[20, 50, 30]
+    # list = [i for i in AlphaVantage(companies[0])[0]]
+
+    # 測試用靜態資料
+    # companies = ["AAPL", "GOOG"]
+    # start_time = "2021-01-01"
+    # end_time = "2021-12-15"
+    # total_start_value = 100
+    # portion = [0.5, 0.5]
+
+    companies_result = []
+    total_end_value = 0
+    for i in range(len(companies)):
+        company_adj_close = getCompanyPrice(companies[i], start_time, end_time)  #呼叫函式，取得list形式的區間股價資料
+        return_percentage = (company_adj_close[-1] - company_adj_close[0]) / company_adj_close[0]  #個股報酬率
+        start_value = invest_start_lst[i]   #個股初值
+        end_value = invest_start_lst[i] * (1 + return_percentage)   #個股終值
+        IRR = ((end_value/start_value)**(365/daysCount(start_time, end_time))-1)*100  #計算IRR
+        
+        # 建立單家公司字典，儲存單家公司內的所有回傳前端的資料
+        company = {
+            "company_name": companies[i],
+            "start_price": round(company_adj_close[0],2),  #起始股價
+            "end_price": round(company_adj_close[-1],2),   #最終股價
+            "change": round(return_percentage*100,2),      #乘上100轉成百分比
+            "start_value": round(start_value,2),
+            "end_value": round(end_value,2),
+            "IRR": round(IRR,2)
+        }
+        companies_result.append(company) #將個別公司資料加回最終的list
+        total_end_value += company["end_value"]
+        total_IRR = ((total_end_value/total_start_value)**(365/daysCount(start_time, end_time))-1)*100
+
+    # 回傳前端的資料
+    kwargs = {
+    "start_time": start_time,
+    "end_time": end_time,
+    "total_start_value": total_start_value,
+    "companies": companies,
+    "total_end_value": total_end_value,
+    "portion": portion,
+    "total_change": round((total_end_value - total_start_value)/total_start_value * 100, 2),
+    "total_IRR": round(total_IRR, 2)
+    }
+
+    # 開啟計算結果畫面
+    return render_template("result.html", companies_result=companies_result, **kwargs) 
+
+
+
 
 
 
