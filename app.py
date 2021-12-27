@@ -38,9 +38,9 @@ def index():
 
 
 
-@app.route("/") 
-def index():
-    return "<h1>Hello Flask</h1>"
+# @app.route("/") 
+# def index():
+#     return "<h1>Hello Flask</h1>"
 
 
 @app.route("/info") 
