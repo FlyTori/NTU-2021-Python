@@ -1,0 +1,8 @@
+flask
+yfinance
+gunicorn
+datetime
+pandas
+numpy
+requests
+json
