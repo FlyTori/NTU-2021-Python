@@ -11,6 +11,9 @@ from datetime import datetime
 app = Flask(__name__, static_folder="static", static_url_path="/")
 
 
+
+################## 報酬率回測 ##################
+
 def getCompanyPrice(company, start_time, end_time):
     # 使用yfinance抓取公司股價。由於一家公司與多家公司回傳格式不同，為了後續處理方便，統一單次只抓取單家公司
     data = yf.download(company, start=start_time, end=end_time)
@@ -31,9 +34,8 @@ def daysCount(start_time, end_time):
 def index():
     return render_template("index.html")  #連到index.html
 
-
-# 使用 POST 方法接收表單
-@app.route("/result", methods=["GET", "POST"])
+# 使用 POST 方法接收報酬率回測表單
+@app.route("/return", methods=["GET", "POST"])
 def calculate():
     total_start_value = int(request.form["start-value"])
     start_time = request.form["start-date"]
@@ -96,7 +98,117 @@ def calculate():
     }
 
     # 開啟計算結果畫面
-    return render_template("result.html", companies_result=companies_result, **kwargs) 
+    return render_template("return.html", companies_result=companies_result, **kwargs) 
+
+
+################## 財報評分 ##################
+
+# 抓財報資料
+def finance_fun(symbol) :
+    stock = yf.Ticker(str(symbol))
+    #income_statement = stock.financials.T
+    balance_sheet = stock.balance_sheet.T
+    cash_flow = stock.cashflow.T
+
+    # 存成字典格式
+    finance = {"net_income_1": cash_flow["Net Income"][1],  # 2020.9.30 net income   
+                "net_income_0": cash_flow["Net Income"][0],  # 2021.9.30 net income    
+                "total_Current_Assets": balance_sheet["Total Current Assets"][0],  # 2020.12.31 total Current Assets
+                "total_Assets": balance_sheet["Total Assets"][0],  # 2020.12.31 total Assets
+                "total_Liabilities": balance_sheet["Total Liab"][0],  # 2020.12.31 total totalLiabilities
+                "total_Current_Liabilities": balance_sheet["Total Current Liabilities"][0],  # 2020.12.31 total Current Liabilities
+                "total_Shareholder_Equity": balance_sheet["Total Stockholder Equity"][0],  # 2020.12.31 total Shareholder Equity
+                "operating_Cash_flow": cash_flow["Total Cash From Operating Activities"][0],  # 2020.12.31 cash flow
+                }
+    return finance
+
+# 填寫股票代號頁面
+@app.route("/stock")
+def stock_input():
+    return render_template("stock.html")
+
+# 計算股票評分頁面
+@app.route("/valuation")
+def valuation():
+    symbol = request.args.get("symbol", "")
+    finance = finance_fun(symbol)
+
+    # 分數轉換函式，將各面向數據之計算結果轉換成相應分數
+    def score_transformation(x):
+        if x < 0 :
+            return 0
+        elif x > 100 :
+            return 100
+        else :
+            return x
+
+    ##### 財務面分數計算
+    def finance_score():    
+        # 營業現金流與稅後淨利比值
+        cash_netincome_rate = score_transformation(
+            round((finance["operating_Cash_flow"]/finance["net_income_0"])*100,2))
+        # 流動比率
+        current_rate = score_transformation(
+            round((finance["total_Current_Assets"]/finance["total_Current_Liabilities"])*100,2))
+        # 資產負債比
+        debt_to_asset_ratio = score_transformation(
+            round((finance["total_Liabilities"]/finance["total_Assets"])*100,2))
+        # 財務面總分
+        finance_score = round(((cash_netincome_rate + current_rate + debt_to_asset_ratio)/3),2)
+        return finance_score
+
+    ##### 價值面分數計算
+    def value_score():
+        # 價值面總分 ROE
+        value_score = score_transformation(round((finance["net_income_0"]/finance["total_Shareholder_Equity"])*100,2))
+        return value_score
+
+    ##### 成長面計算
+    def growth_score():
+        # 稅後淨利成長率
+        netincome_growth_rate = score_transformation(
+            round(((finance["net_income_0"]-finance["net_income_1"])/abs(finance["net_income_1"]))*100,2))
+        # 成長面總分
+        growth_score = netincome_growth_rate
+        return growth_score
+
+    ##### 最後推薦分數
+    def total_score():
+        total_score = round((finance_score() + value_score() + growth_score())/3,2)
+        return total_score
+
+    # 回傳前端的資料
+    kwargs = {
+    "company_name": symbol,
+    "total_score": total_score(),
+    "growth_score": growth_score(),
+    "value_score": value_score(),
+    "finance_score": finance_score(),
+    }
+
+    return render_template("valuation.html", **kwargs)
+    # return render_template("valuation.html")
+
+
+
+# stock_symbol="UPST"
+# finance = finance_fun("UPST")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__": ###如果以主程式執行
     app.run()  ###立即啟動伺服器
