@@ -91,7 +91,7 @@ def calculate():
         
         # 建立單家公司字典，儲存單家公司內的所有回傳前端的資料
         company = {
-            "company_name": companies[i],
+            "company_name": company,
             "start_price": round(company_adj_close[0],2),  #起始股價
             "end_price": round(company_adj_close[-1],2),   #最終股價
             "change": round(return_percentage*100,2),      #乘上100轉成百分比
@@ -204,7 +204,8 @@ def valuation():
 
     # 回傳前端的資料
     if finance == "empty":
-        return render_template("error.html", user_input = user_input)
+        return render_template("valuation.html", empty_symbol = "True", symbol = user_input)
+        # return render_template("error.html", user_input = user_input)
     else:
         kwargs = {
         "company_name": symbol,
@@ -215,7 +216,7 @@ def valuation():
         "finance": finance,
         }
 
-        return render_template("valuation.html", **kwargs)
+        return render_template("valuation.html", empty_symbol = "False", **kwargs)
 
 
 if __name__ == "__main__": ###如果以主程式執行
