@@ -10,17 +10,29 @@ from datetime import datetime
 #建立Application物件，設定靜態檔案的路徑處理
 app = Flask(__name__, static_folder="static", static_url_path="/")
 
+# 讀取 json 檔案（公司股票代號與名稱對應）
+with open('./static/cmp_data.json', 'r') as cmp_data:
+    data = cmp_data.read()   
+    company_name_symbol = json.loads(data)
 
+def getCompanySymbol(user_input):   #處理大小寫，把公司名稱統一轉成代號
+    user_input = user_input.upper()
+    if user_input in company_name_symbol.keys():
+        return company_name_symbol[user_input]
+    else:
+        return user_input
 
 ################## 報酬率回測 ##################
 
-def getCompanyPrice(company, start_time, end_time):
+def getCompanyPrice(symbol, start_time, end_time):
     # 使用yfinance抓取公司股價。由於一家公司與多家公司回傳格式不同，為了後續處理方便，統一單次只抓取單家公司
-    data = yf.download(company, start=start_time, end=end_time)
-
+    data = yf.download(symbol, start=start_time, end=end_time)
+    if data.empty:
+        return "empty"
     #原始資料有很多欄位，抓取Adj Close欄位，並從Pandas Series格式轉成list
-    company_adj_close = data["Adj Close"].tolist() 
-    return company_adj_close
+    else:
+        company_adj_close = data["Adj Close"].tolist() 
+        return company_adj_close
 
 # 利用datetime套件計算相差天數，計算IRR用
 def daysCount(start_time, end_time):
@@ -64,8 +76,14 @@ def calculate():
 
     companies_result = []
     total_end_value = 0
+    empty_symbol = []
+    total_IRR = 0
     for i in range(len(companies)):
-        company_adj_close = getCompanyPrice(companies[i], start_time, end_time)  #呼叫函式，取得list形式的區間股價資料
+        company = getCompanySymbol(companies[i])
+        company_adj_close = getCompanyPrice(company, start_time, end_time)  #呼叫函式，取得list形式的區間股價資料
+        if company_adj_close == "empty":
+            empty_symbol.append(company)
+            continue
         return_percentage = (company_adj_close[-1] - company_adj_close[0]) / company_adj_close[0]  #個股報酬率
         start_value = invest_start_lst[i]   #個股初值
         end_value = invest_start_lst[i] * (1 + return_percentage)   #個股終值
@@ -94,7 +112,8 @@ def calculate():
     "total_end_value": total_end_value,
     "portion": portion,
     "total_change": round((total_end_value - total_start_value)/total_start_value * 100, 2),
-    "total_IRR": round(total_IRR, 2)
+    "total_IRR": round(total_IRR, 2),
+    "empty_symbol": empty_symbol,
     }
 
     # 開啟計算結果畫面
@@ -104,23 +123,27 @@ def calculate():
 ################## 財報評分 ##################
 
 # 抓財報資料
+
+empty_symbol = False
 def finance_fun(symbol) :
     stock = yf.Ticker(str(symbol))
     #income_statement = stock.financials.T
     balance_sheet = stock.balance_sheet.T
     cash_flow = stock.cashflow.T
-
+    if balance_sheet.empty:
+        return "empty"
     # 存成字典格式
-    finance = {"net_income_1": cash_flow["Net Income"][1],  # 2020.9.30 net income   
-                "net_income_0": cash_flow["Net Income"][0],  # 2021.9.30 net income    
-                "total_Current_Assets": balance_sheet["Total Current Assets"][0],  # 2020.12.31 total Current Assets
-                "total_Assets": balance_sheet["Total Assets"][0],  # 2020.12.31 total Assets
-                "total_Liabilities": balance_sheet["Total Liab"][0],  # 2020.12.31 total totalLiabilities
-                "total_Current_Liabilities": balance_sheet["Total Current Liabilities"][0],  # 2020.12.31 total Current Liabilities
-                "total_Shareholder_Equity": balance_sheet["Total Stockholder Equity"][0],  # 2020.12.31 total Shareholder Equity
-                "operating_Cash_flow": cash_flow["Total Cash From Operating Activities"][0],  # 2020.12.31 cash flow
-                }
-    return finance
+    else:
+        finance = {"net_income_1": cash_flow["Net Income"][1],  # 2020.9.30 net income   
+                    "net_income_0": cash_flow["Net Income"][0],  # 2021.9.30 net income    
+                    "total_Current_Assets": balance_sheet["Total Current Assets"][0],  # 2020.12.31 total Current Assets
+                    "total_Assets": balance_sheet["Total Assets"][0],  # 2020.12.31 total Assets
+                    "total_Liabilities": balance_sheet["Total Liab"][0],  # 2020.12.31 total totalLiabilities
+                    "total_Current_Liabilities": balance_sheet["Total Current Liabilities"][0],  # 2020.12.31 total Current Liabilities
+                    "total_Shareholder_Equity": balance_sheet["Total Stockholder Equity"][0],  # 2020.12.31 total Shareholder Equity
+                    "operating_Cash_flow": cash_flow["Total Cash From Operating Activities"][0],  # 2020.12.31 cash flow
+                    }
+        return finance
 
 # 填寫股票代號頁面
 @app.route("/stock")
@@ -128,9 +151,11 @@ def stock_input():
     return render_template("stock.html")
 
 # 計算股票評分頁面
+
 @app.route("/valuation")
 def valuation():
-    symbol = request.args.get("symbol", "")
+    user_input = request.args.get("symbol", "")
+    symbol = getCompanySymbol(user_input) #處理大小寫，把公司名稱統一轉成代號
     finance = finance_fun(symbol)
 
     # 分數轉換函式，將各面向數據之計算結果轉換成相應分數
@@ -178,36 +203,19 @@ def valuation():
         return total_score
 
     # 回傳前端的資料
-    kwargs = {
-    "company_name": symbol,
-    "total_score": total_score(),
-    "growth_score": growth_score(),
-    "value_score": value_score(),
-    "finance_score": finance_score(),
-    }
+    if finance == "empty":
+        return render_template("error.html", user_input = user_input)
+    else:
+        kwargs = {
+        "company_name": symbol,
+        "total_score": total_score(),
+        "growth_score": growth_score(),
+        "value_score": value_score(),
+        "finance_score": finance_score(),
+        "finance": finance,
+        }
 
-    return render_template("valuation.html", **kwargs)
-    # return render_template("valuation.html")
-
-
-
-# stock_symbol="UPST"
-# finance = finance_fun("UPST")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return render_template("valuation.html", **kwargs)
 
 
 if __name__ == "__main__": ###如果以主程式執行
