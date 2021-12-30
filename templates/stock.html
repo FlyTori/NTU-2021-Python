@@ -39,9 +39,8 @@
             <h2>美股小幫手</h2>
             <p>來看看這家公司的財報評分吧</p>
             <div class="form text-start text-body bg-white bg-opacity-75 rounded-3 p-5">
-                <form action="/valuation" method="GET">
+                <form action="{{url_for('stock_valuation')}}" method="GET">
                     
-
                     <div class="row">
                     <label for="symbol" class="form-label col-sm-12 col-md-3 col-form-label">股票代號</label>
                         <div class="col-sm-12 col-md-9">
@@ -54,6 +53,48 @@
                     </div>
                 </form>
             </div>
+
+            <div>
+                {% if symbol_valid and user_input %}
+                    <h3>{{company_name}}的財報評分</h3><br>
+                    <div id="result" class="w-50 text-white text-start text-body bg-white bg-opacity-75 rounded-3 p-5">
+                    <div class="text-center">
+                        <h2>總分：{{total_score}}</h2>
+                        {% if total_score >= 80 %}
+                        <p>此股票財務狀況良好，值得投資</p>
+                        {% elif total_score >= 60%}
+                        <p>此股票財務狀況尚可，可以投資</p>
+                        {% else %}
+                        <p>此股票財務狀況有疑慮，建議投資前要審慎評估</p>
+                        {% endif %}
+                    
+                    </div>
+                    <table class="table table-borderless">
+                        <thead>
+                            <tr>
+                                <th scope="col">成長分數</th>
+                                <th scope="col">價值分數</th>
+                                <th scope="col">財務表現</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="col">{{growth_score}}</th>
+                                <th scope="col">{{value_score}}</th>
+                                <th scope="col">{{finance_score}}</th>
+                            </tr>
+                        </tbody>
+                    </table>
+                
+
+                {% elif symbol_valid == False and user_input %}
+                    <h3>輸入的股票代號或公司名稱有誤，請重新檢查</h3>
+                    {{user_input}}
+                {% endif %}
+
+            </div>
+
+
         </div>
     </div>
 

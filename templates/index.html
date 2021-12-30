@@ -39,7 +39,7 @@
             <h2>美股小幫手</h2>
             <p>來測測你的投資組合吧</p>
             <div class="form text-start text-body bg-white bg-opacity-75 rounded-3 p-5">
-                <form action="/return" method="POST">
+                <form action="{{url_for('index')}}" method="POST">
                     <div class="row">
                         <label for="start-value" class="form-label col-sm-12 col-md-3 col-form-label">初始投資金額</label>
                         <div class="col-sm-12 col-md-9">
@@ -92,6 +92,65 @@
                     </div>
                 </form>
             </div>
+
+            <div>
+                {% if empty_symbol|length >0 %}
+                <h3>輸入的代號或公司名稱有誤，請重新檢查</h3>
+                    {% for i in empty_symbol %}
+                    <h4>{{i}}</h4>
+                    {% endfor %}
+                {% endif%}
+            </div>
+            
+            <div>
+                {% if companies_result and empty_symbol|length == 0 %}
+                    <h3>報酬率回測</h3>
+                    {% if total_change>0 and total_IRR> 0 %}
+                    <p>恭喜你！總報酬率{{total_change}}％，總年化報酬率{{total_IRR}}％</p>
+                    <p>又往財富自由更進一步囉！</p>
+                    {% else %}
+                    <p>哎呀！總報酬率{{total_change}}％，總年化報酬率{{total_IRR}}％</p>
+                    <p>再做點功課，一定可以贏回來！</p>
+                    {% endif %}
+
+                    <div id="result" class="w-75 text-white text-start text-body bg-white bg-opacity-75 rounded-3 p-5">
+                    
+                    <p>最終金額: {{total_end_value}}</p>
+                    <p>從{{start_time}}到{{end_time}}</p>
+                    <p>起始投資金額: {{total_start_value}}</p>
+                    
+                    <table class="table table-borderless">
+                        <thead>
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col">股票代號</th>
+                                <th scope="col">期初股價</th>
+                                <th scope="col">期末股價</th>
+                                <th scope="col">期初投資金額</th>
+                                <th scope="col">期末投資金額</th>
+                                <th scope="col">報酬率</th>
+                                <th scope="col">年化報酬率</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for company in companies_result %}
+                            <tr>
+                                <th scope="row"></th>
+                                <td>{{company["company_name"]}}</td>
+                                <td>{{company["start_price"]}}</td>
+                                <td>{{company["end_price"]}}</td>
+                                <td>{{company["start_value"]}}</td>
+                                <td>{{company["end_value"]}}</td>
+                                <td>{{company["change"]}}%</td>
+                                <td>{{company["IRR"]}}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+
         </div>
     </div>
 

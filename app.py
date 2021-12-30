@@ -1,6 +1,6 @@
 ### https://dbsk-web.herokuapp.com
 
-from flask import Flask, app, request, render_template, session
+from flask import Flask, app, request, render_template, session, url_for
 import yfinance as yf
 import json   #載入json
 import pandas as pd
@@ -12,18 +12,20 @@ app = Flask(__name__, static_folder="static", static_url_path="/")
 
 # 讀取 json 檔案（公司股票代號與名稱對應）
 with open('./static/cmp_data.json', 'r') as cmp_data:
-    data = cmp_data.read()   
+    data = cmp_data.read()
     company_name_symbol = json.loads(data)
 
-def getCompanySymbol(user_input):   #處理大小寫，把公司名稱統一轉成代號
+#處理大小寫，把公司名稱統一轉成代號
+def getCompanySymbol(user_input):   
     user_input = user_input.upper()
     if user_input in company_name_symbol.keys():
         return company_name_symbol[user_input]
     else:
         return user_input
 
-################## 報酬率回測 ##################
+################## 報酬率回測相關函式 ##################
 
+# yfinance抓取單家公司指定日期股價
 def getCompanyPrice(symbol, start_time, end_time):
     # 使用yfinance抓取公司股價。由於一家公司與多家公司回傳格式不同，為了後續處理方便，統一單次只抓取單家公司
     data = yf.download(symbol, start=start_time, end=end_time)
@@ -41,36 +43,30 @@ def daysCount(start_time, end_time):
     diff = end.date() - start.date()
     return(diff.days)
 
-# 使用 GET 方法處理路徑 / 的對應函式
-@app.route("/")  #路徑為/
-def index():
-    return render_template("index.html")  #連到index.html
-
-# 使用 POST 方法接收報酬率回測表單
-@app.route("/return", methods=["GET", "POST"])
-def calculate():
-    total_start_value = int(request.form["start-value"])
-    start_time = request.form["start-date"]
-    end_time = request.form["end-date"]
-    company1 = request.form["ticker1"]
-    company1_portion = request.form["ticker1-portion"]
-    company2 = request.form["ticker2"]
-    company2_portion = request.form["ticker2-portion"]
-    company3 = request.form["ticker3"]
-    company3_portion = request.form["ticker3-portion"]
+# 處理用戶輸入的表單資料
+def companies_return(form):
+    total_start_value = int(form["start-value"])
+    start_time = form["start-date"]
+    end_time = form["end-date"]
+    company1 = form["ticker1"]
+    company1_portion = form["ticker1-portion"]
+    company2 = form["ticker2"]
+    company2_portion = form["ticker2-portion"]
+    company3 = form["ticker3"]
+    company3_portion = form["ticker3-portion"]
     
     # 建立公司與投資比例列表
     companies_input = [company1, company2, company3]
     portion_input = [company1_portion, company2_portion, company3_portion]
-    companies = [i for i in companies_input if i!= ""]
-    portion = [int(i)/100 for i in portion_input if i!= ""]
+    companies = [i for i in companies_input if i!= ""]    #去掉空白資料
+    portion = [int(i)/100 for i in portion_input if i!= ""]   #去掉空白資料
     invest_start_lst = [ i * total_start_value for i in portion] #個股投資金額，例：[20, 50, 30]
-    # list = [i for i in AlphaVantage(companies[0])[0]]
 
     # 測試用靜態資料
     # companies = ["AAPL", "GOOG"]
     # start_time = "2021-01-01"
     # end_time = "2021-12-15"
+    # invest_start_lst = [50, 50]
     # total_start_value = 100
     # portion = [0.5, 0.5]
 
@@ -78,6 +74,7 @@ def calculate():
     total_end_value = 0
     empty_symbol = []
     total_IRR = 0
+
     for i in range(len(companies)):
         company = getCompanySymbol(companies[i])
         company_adj_close = getCompanyPrice(company, start_time, end_time)  #呼叫函式，取得list形式的區間股價資料
@@ -89,7 +86,7 @@ def calculate():
         end_value = invest_start_lst[i] * (1 + return_percentage)   #個股終值
         IRR = ((end_value/start_value)**(365/daysCount(start_time, end_time))-1)*100  #計算IRR
         
-        # 建立單家公司字典，儲存單家公司內的所有回傳前端的資料
+        # 建立單家公司字典，儲存單家公司內的所有資料
         company = {
             "company_name": company,
             "start_price": round(company_adj_close[0],2),  #起始股價
@@ -99,12 +96,12 @@ def calculate():
             "end_value": round(end_value,2),
             "IRR": round(IRR,2)
         }
-        companies_result.append(company) #將個別公司資料加回最終的list
+        companies_result.append(company) #將個別公司資料加回最終的list (函式回傳的資料一)
         total_end_value += company["end_value"]
         total_IRR = ((total_end_value/total_start_value)**(365/daysCount(start_time, end_time))-1)*100
 
-    # 回傳前端的資料
-    kwargs = {
+    # 函式回傳的資料二
+    result = {
     "start_time": start_time,
     "end_time": end_time,
     "total_start_value": total_start_value,
@@ -115,16 +112,29 @@ def calculate():
     "total_IRR": round(total_IRR, 2),
     "empty_symbol": empty_symbol,
     }
+    return companies_result, result
 
-    # 開啟計算結果畫面
-    return render_template("return.html", companies_result=companies_result, **kwargs) 
+
+# 使用 GET 方法處理路徑 / 的對應函式
+@app.route("/", methods=["GET", "POST"])  #路徑為/
+def index():
+    # companies_result, final_result = False, False
+    if request.method=='POST':      #當使用者有輸入資料時，呼叫companies_return()函式並取得回測結果
+        form = request.form
+        data = companies_return(form)
+        companies_result = data[0]  # 取得result的第一個值，格式為list，其中包含各公司的資料（字典格式）
+        kwargs = data[1]  # 取得時間、報酬率、投資終值等資料（字典格式）
+        return render_template("index.html", companies_result=companies_result, **kwargs)
+    else:
+        return render_template("index.html")
 
 
 ################## 財報評分 ##################
 
-# 抓財報資料
 
-empty_symbol = False
+
+
+# 抓財報資料
 def finance_fun(symbol) :
     stock = yf.Ticker(str(symbol))
     #income_statement = stock.financials.T
@@ -145,79 +155,70 @@ def finance_fun(symbol) :
                     }
         return finance
 
+def score_transformation(x):   #處理大於100與小於0的分數
+    if x < 0 :
+        return 0
+    elif x > 100 :
+        return 100
+    else :
+        return x
+
+##### 財務面分數計算
+def finance_score(finance): 
+    cash_netincome_rate = score_transformation(   # 營業現金流與稅後淨利比值
+        round((finance["operating_Cash_flow"]/finance["net_income_0"])*100,2))
+    current_rate = score_transformation(          # 流動比率
+        round((finance["total_Current_Assets"]/finance["total_Current_Liabilities"])*100,2))
+    debt_to_asset_ratio = score_transformation(   # 資產負債比
+        round((finance["total_Liabilities"]/finance["total_Assets"])*100,2))
+    finance_score = round(((cash_netincome_rate + current_rate + debt_to_asset_ratio)/3),2)
+    return finance_score
+
+##### 價值面分數計算
+def value_score(finance):
+    value_score = score_transformation(    # 價值面總分 ROE
+        round((finance["net_income_0"]/finance["total_Shareholder_Equity"])*100,2))
+    return value_score
+
+##### 成長面分數計算
+def growth_score(finance):
+    netincome_growth_rate = score_transformation(  # 稅後淨利成長率
+        round(((finance["net_income_0"]-finance["net_income_1"])/abs(finance["net_income_1"]))*100,2))
+    growth_score = netincome_growth_rate
+    return growth_score
+
+##### 最後推薦分數
+def total_score():
+    total_score = round((finance_score() + value_score() + growth_score())/3,2)
+    return total_score
+
+
 # 填寫股票代號頁面
 @app.route("/stock")
-def stock_input():
-    return render_template("stock.html")
+def stock_valuation():
+    user_input = request.args.get("symbol", "")    #判斷用戶是否有輸入/網址後面是否有字串
+    if user_input == "":
+        return render_template("stock.html", )     #如果沒有則開啟stock.html
 
-# 計算股票評分頁面
+    if user_input != "":   #當用戶有輸入，或網址後面有字串
+        symbol = getCompanySymbol(user_input) #處理大小寫，把公司名稱統一轉成代號
+        finance = finance_fun(symbol)  #呼叫finance_fun，跟yfinance拿資料
 
-@app.route("/valuation")
-def valuation():
-    user_input = request.args.get("symbol", "")
-    symbol = getCompanySymbol(user_input) #處理大小寫，把公司名稱統一轉成代號
-    finance = finance_fun(symbol)
+        # 回傳結果
+        if finance != "empty":   #若成功從yfinance拿到資料，則回傳以下資料給前端
+            kwargs = {
+            "company_name": symbol,
+            "total_score": total_score(),
+            "growth_score": growth_score(finance),
+            "value_score": value_score(finance),
+            "finance_score": finance_score(finance),
+            "finance": finance,
+            }
+            return render_template("stock.html", symbol_valid = True, user_input=user_input, **kwargs)
 
-    # 分數轉換函式，將各面向數據之計算結果轉換成相應分數
-    def score_transformation(x):
-        if x < 0 :
-            return 0
-        elif x > 100 :
-            return 100
-        else :
-            return x
-
-    ##### 財務面分數計算
-    def finance_score():    
-        # 營業現金流與稅後淨利比值
-        cash_netincome_rate = score_transformation(
-            round((finance["operating_Cash_flow"]/finance["net_income_0"])*100,2))
-        # 流動比率
-        current_rate = score_transformation(
-            round((finance["total_Current_Assets"]/finance["total_Current_Liabilities"])*100,2))
-        # 資產負債比
-        debt_to_asset_ratio = score_transformation(
-            round((finance["total_Liabilities"]/finance["total_Assets"])*100,2))
-        # 財務面總分
-        finance_score = round(((cash_netincome_rate + current_rate + debt_to_asset_ratio)/3),2)
-        return finance_score
-
-    ##### 價值面分數計算
-    def value_score():
-        # 價值面總分 ROE
-        value_score = score_transformation(round((finance["net_income_0"]/finance["total_Shareholder_Equity"])*100,2))
-        return value_score
-
-    ##### 成長面計算
-    def growth_score():
-        # 稅後淨利成長率
-        netincome_growth_rate = score_transformation(
-            round(((finance["net_income_0"]-finance["net_income_1"])/abs(finance["net_income_1"]))*100,2))
-        # 成長面總分
-        growth_score = netincome_growth_rate
-        return growth_score
-
-    ##### 最後推薦分數
-    def total_score():
-        total_score = round((finance_score() + value_score() + growth_score())/3,2)
-        return total_score
-
-    # 回傳前端的資料
-    if finance == "empty":
-        return render_template("valuation.html", empty_symbol = "True", symbol = user_input)
-        # return render_template("error.html", user_input = user_input)
-    else:
-        kwargs = {
-        "company_name": symbol,
-        "total_score": total_score(),
-        "growth_score": growth_score(),
-        "value_score": value_score(),
-        "finance_score": finance_score(),
-        "finance": finance,
-        }
-
-        return render_template("valuation.html", empty_symbol = "False", **kwargs)
-
+        elif finance == "empty":   #如果找不到資料，回傳symbol_valid = False
+            return render_template("stock.html", symbol_valid = False, user_input=user_input) 
+            
 
 if __name__ == "__main__": ###如果以主程式執行
     app.run()  ###立即啟動伺服器
