@@ -5,160 +5,28 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    
-    <!-- 待辦：改變連結資料夾 -->
-    <!-- <link rel="stylesheet" href="static/style.css"> -->
-
-    <!-- 最後deploy的時候把css移到 static/style.css 裡 -->
-    <style>
-        body{
-            background: url(https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2340&q=80) no-repeat center center fixed;
-            -webkit-background-size: cover;
-            -moz-background-size: cover;
-            -o-background-size: cover;
-            background-size: cover;
-
-        }
-
-        #form-1 {
-            min-width: 460px;
-            max-width: 850px;
-        }
-    </style>
-
-
-    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <title>美股小幫手</title>
 </head>
-<body>
-    <nav>
-
-    </nav>
-    <!-- 在外框加入bootrap水平、垂直置中設定 d-flex flex-column min-vh-100 justify-content-center align-items-center-->
-    <div id="main" class="d-flex flex-column min-vh-100 justify-content-center align-items-center"> 
-        <div id="form-1" class="w-75 text-center">
-            <h2>美股小幫手</h2>
-            <p>來測測你的投資組合吧</p>
-            <div class="form text-start text-body bg-white bg-opacity-75 rounded-3 p-5">
-                <form action="{{url_for('index')}}" method="POST">
-                    <div class="row">
-                        <label for="start-value" class="form-label col-sm-12 col-md-3 col-form-label">初始投資金額</label>
-                        <div class="col-sm-12 col-md-9">
-                            <input type="number" id="start-value" class="form-control" name="start-value" value="10000" required><br>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                    <label for="start-date" class="form-label col-sm-12 col-md-3 col-form-label">開始時間</label>
-                        <div class="col-sm-12 col-md-9">
-                            <input type="date" id="start-date" class="form-control" name="start-date" value="2020-01-03" min="2009-01-01" max="2021-12-11" required><br>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                    <label for="end-date" class="form-label col-sm-12 col-md-3">結束時間</label>
-                        <div class="col-sm-12 col-md-9">
-                            <input type="date" id="end-date" class="form-control" name="end-date" value="2021-12-15" min="2009-01-01" max="2021-12-19" required><br>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-sm-12 col-md-3 col-form-label">持股</div>
-                        <div class="col-sm-12 col-md-9 row pe-0">
-                            <div class="col-7">
-                                <input type="text" class="form-control" placeholder="股票代號或公司名稱" name="ticker1" required><br>
-                            </div>
-                            <div class="col-5 p-0">
-                                <input type="number" class="form-control" placeholder="投資比例(%)" name="ticker1-portion" required><br>
-                            </div>
-                            <div class="col-7">
-                                <input type="text" class="form-control" placeholder="股票代號或公司名稱" name="ticker2"><br>
-                            </div>
-                            <div class="col-5 p-0">
-                                <input type="number" class="form-control" placeholder="投資比例(%)" name="ticker2-portion"><br>
-                            </div>
-                            <div class="col-7">
-                                <input type="text" class="form-control" placeholder="股票代號或公司名稱" name="ticker3"><br>
-                            </div>
-                            <div class="col-5 p-0">
-                                <input type="number" class="form-control" placeholder="投資比例(%)" name="ticker3-portion"><br>
-                            </div>
-                        </div>
-                        
-                    </div>
-                    
-                    <div class="d-flex flex-row justify-content-center mt-4">
-                        <button type="submit" class="btn btn-primary px-4 mx-2">計算</button>
-                        <button type="reset" class="btn btn-light px-4 mx-2 text-muted">清空輸入</button>
-                    </div>
-                </form>
+<body id="index_body" class="overlay container-fluid d-flex flex-column min-vh-100 justify-content-center align-items-center">
+    <h1 class="text-white pb-2 pb-sm-5">選好股，過更好的生活</h1>
+    <div class="container">
+        <div id="options" class="row justify-content-evenly align-items-center text-center">
+            <div id="backtesting" class="box col-10 col-sm-8 col-md-5 col-lg-5 col-xl-4 p-5">
+                <h4 class="mb-3 text-white"><span class="emphasis">1. </span>回測你的投資組合報酬率</h4>
+                <button type="button" class="btn btn-primary">
+                    <a href="backtesting">回測報酬率</a>
+                </button>
             </div>
 
-            <div>
-                {% if empty_symbol|length >0 %}
-                <h3>輸入的代號或公司名稱有誤，請重新檢查</h3>
-                    {% for i in empty_symbol %}
-                    <h4>{{i}}</h4>
-                    {% endfor %}
-                {% endif%}
+            <div id="valuation" class="box col-10 col-sm-8 col-md-5 col-lg-5 col-xl-4 p-5">
+                <h4 class="mb-3 text-white"><span class="emphasis">2. </span>看公司的基本面評分</h4>
+                <button type="button" class="btn btn-primary">
+                    <a href="stock">看公司評分</a>
+                </button>
             </div>
-            
-            <div>
-                {% if companies_result and empty_symbol|length == 0 %}
-                    <h3>報酬率回測</h3>
-                    {% if total_change>0 and total_IRR> 0 %}
-                    <p>恭喜你！總報酬率{{total_change}}％，總年化報酬率{{total_IRR}}％</p>
-                    <p>又往財富自由更進一步囉！</p>
-                    {% else %}
-                    <p>哎呀！總報酬率{{total_change}}％，總年化報酬率{{total_IRR}}％</p>
-                    <p>再做點功課，一定可以贏回來！</p>
-                    {% endif %}
-
-                    <div id="result" class="w-75 text-white text-start text-body bg-white bg-opacity-75 rounded-3 p-5">
-                    
-                    <p>最終金額: {{total_end_value}}</p>
-                    <p>從{{start_time}}到{{end_time}}</p>
-                    <p>起始投資金額: {{total_start_value}}</p>
-                    
-                    <table class="table table-borderless">
-                        <thead>
-                            <tr>
-                                <th scope="col"></th>
-                                <th scope="col">股票代號</th>
-                                <th scope="col">期初股價</th>
-                                <th scope="col">期末股價</th>
-                                <th scope="col">期初投資金額</th>
-                                <th scope="col">期末投資金額</th>
-                                <th scope="col">報酬率</th>
-                                <th scope="col">年化報酬率</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {% for company in companies_result %}
-                            <tr>
-                                <th scope="row"></th>
-                                <td>{{company["company_name"]}}</td>
-                                <td>{{company["start_price"]}}</td>
-                                <td>{{company["end_price"]}}</td>
-                                <td>{{company["start_value"]}}</td>
-                                <td>{{company["end_value"]}}</td>
-                                <td>{{company["change"]}}%</td>
-                                <td>{{company["IRR"]}}%</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
-            </div>
-
         </div>
-    </div>
-
-    <footer>
-
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    </div> 
     
 </body>
 </html>

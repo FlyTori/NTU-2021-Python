@@ -1,3 +1,66 @@
 
-/* 之後要移到static資料夾 */
+/* index.html */
+#index_body{
+    background: linear-gradient(rgba(45, 45, 45, 0.3), rgba(30, 30, 30, 0.4)), url(https://images.unsplash.com/photo-1499916078039-922301b0eb9b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1760&q=80) no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
 
+.box {
+    height: 200px;
+    background-color: #2d2d2d;
+    border-radius: 8px;
+    opacity: 90%;
+}
+
+.emphasis{
+    font-size: 2rem;
+    font-style: italic;
+}
+
+.btn, .btn:hover, .btn:focus, .btn:active, .btn a{
+    background-color: #F1A026;
+    text-decoration: none;
+    border: none;
+    color: #000;
+    font-weight: 500;
+    font-size: 1.2rem;
+    box-shadow: none;
+}
+
+.btn:hover{
+    opacity: 90%;
+}
+
+
+/* backtesting.html & stock.html */
+
+#left{
+    background-color: #333333;
+}
+
+#right{
+    background-color: #F1A30A;
+}
+
+@media only screen and (min-width: 992px) {
+    #left, #right{
+        min-height: 100vh;
+    }
+}
+
+#stock_page, #backtesting_page{
+    background-color: #333333;
+}
+
+.dark_box_color1{
+    background-color: #444444;
+    border-radius: 16px !important;
+}
+
+.dark_box_color2{
+    background-color: #754600;
+    border-radius: 16px !important;
+}

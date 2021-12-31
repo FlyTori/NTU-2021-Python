@@ -23,6 +23,12 @@ def getCompanySymbol(user_input):
     else:
         return user_input
 
+################## 首頁 ##################
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
 ################## 報酬率回測相關函式 ##################
 
 # yfinance抓取單家公司指定日期股價
@@ -116,25 +122,22 @@ def companies_return(form):
 
 
 # 使用 GET 方法處理路徑 / 的對應函式
-@app.route("/", methods=["GET", "POST"])  #路徑為/
-def index():
+@app.route("/backtesting", methods=["GET", "POST"])
+def backtesting():
     # companies_result, final_result = False, False
     if request.method=='POST':      #當使用者有輸入資料時，呼叫companies_return()函式並取得回測結果
         form = request.form
         data = companies_return(form)
         companies_result = data[0]  # 取得result的第一個值，格式為list，其中包含各公司的資料（字典格式）
         kwargs = data[1]  # 取得時間、報酬率、投資終值等資料（字典格式）
-        return render_template("index.html", companies_result=companies_result, **kwargs)
+        return render_template("backtesting.html", companies_result=companies_result, **kwargs)
     else:
-        return render_template("index.html")
+        return render_template("backtesting.html")
 
 
 ################## 財報評分 ##################
 
-
-
-
-# 抓財報資料
+# 抓財報資料函式
 def finance_fun(symbol) :
     stock = yf.Ticker(str(symbol))
     #income_statement = stock.financials.T
@@ -155,7 +158,8 @@ def finance_fun(symbol) :
                     }
         return finance
 
-def score_transformation(x):   #處理大於100與小於0的分數
+# 處理大於100與小於0的分數
+def score_transformation(x):   
     if x < 0 :
         return 0
     elif x > 100 :
@@ -163,33 +167,33 @@ def score_transformation(x):   #處理大於100與小於0的分數
     else :
         return x
 
-##### 財務面分數計算
-def finance_score(finance): 
+# 財務面分數計算
+def finance_score(data): 
     cash_netincome_rate = score_transformation(   # 營業現金流與稅後淨利比值
-        round((finance["operating_Cash_flow"]/finance["net_income_0"])*100,2))
+        round((data["operating_Cash_flow"]/data["net_income_0"])*100,2))
     current_rate = score_transformation(          # 流動比率
-        round((finance["total_Current_Assets"]/finance["total_Current_Liabilities"])*100,2))
+        round((data["total_Current_Assets"]/data["total_Current_Liabilities"])*100,2))
     debt_to_asset_ratio = score_transformation(   # 資產負債比
-        round((finance["total_Liabilities"]/finance["total_Assets"])*100,2))
+        round((data["total_Liabilities"]/data["total_Assets"])*100,2))
     finance_score = round(((cash_netincome_rate + current_rate + debt_to_asset_ratio)/3),2)
     return finance_score
 
-##### 價值面分數計算
-def value_score(finance):
+# 價值面分數計算
+def value_score(data):
     value_score = score_transformation(    # 價值面總分 ROE
-        round((finance["net_income_0"]/finance["total_Shareholder_Equity"])*100,2))
+        round((data["net_income_0"]/data["total_Shareholder_Equity"])*100,2))
     return value_score
 
-##### 成長面分數計算
-def growth_score(finance):
+# 成長面分數計算
+def growth_score(data):
     netincome_growth_rate = score_transformation(  # 稅後淨利成長率
-        round(((finance["net_income_0"]-finance["net_income_1"])/abs(finance["net_income_1"]))*100,2))
+        round(((data["net_income_0"]-data["net_income_1"])/abs(data["net_income_1"]))*100,2))
     growth_score = netincome_growth_rate
     return growth_score
 
-##### 最後推薦分數
-def total_score():
-    total_score = round((finance_score() + value_score() + growth_score())/3,2)
+# 最後推薦分數
+def total_score(data):
+    total_score = round((finance_score(data) + value_score(data) + growth_score(data))/3,2)
     return total_score
 
 
@@ -208,7 +212,7 @@ def stock_valuation():
         if finance != "empty":   #若成功從yfinance拿到資料，則回傳以下資料給前端
             kwargs = {
             "company_name": symbol,
-            "total_score": total_score(),
+            "total_score": total_score(finance),
             "growth_score": growth_score(finance),
             "value_score": value_score(finance),
             "finance_score": finance_score(finance),

@@ -5,96 +5,72 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    
-    <!-- 待辦：改變連結資料夾 -->
-    <!-- <link rel="stylesheet" href="static/style.css"> -->
-
-    <!-- 最後deploy的時候把css移到 static/style.css 裡 -->
-    <style>
-        body{
-            background: url(https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?ixlib=rb-1.2.1&ixid=MnwxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2369&q=80) no-repeat center center fixed;
-            -webkit-background-size: cover;
-            -moz-background-size: cover;
-            -o-background-size: cover;
-            background-size: cover;
-
-        }
-
-        #form-1 {
-            min-width: 460px;
-            max-width: 850px;
-        }
-    </style>
-
-
-    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <title>美股小幫手</title>
 </head>
-<body>
-    <nav>
+<body id="stock_page">
 
-    </nav>
-    <!-- 在外框加入bootrap水平、垂直置中設定 d-flex flex-column min-vh-100 justify-content-center align-items-center-->
-    <div id="main" class="d-flex flex-column min-vh-100 justify-content-center align-items-center"> 
-        <div id="form-1" class="w-75 text-center">
-            <h2>美股小幫手</h2>
-            <p>來看看這家公司的財報評分吧</p>
-            <div class="form text-start text-body bg-white bg-opacity-75 rounded-3 p-5">
-                <form action="{{url_for('stock_valuation')}}" method="GET">
-                    
-                    <div class="row">
-                    <label for="symbol" class="form-label col-sm-12 col-md-3 col-form-label">股票代號</label>
-                        <div class="col-sm-12 col-md-9">
-                            <input type="text" id="symbol" class="form-control" name="symbol" placeholder="股票代號或公司名稱" required><br>
+    <div class="container-fluid">
+        <div class="row">
+            <div id="left" class="col-lg d-flex flex-column justify-content-center align-items-center px-5 py-5 px-lg-0 py-lg-0">
+                <div class="col-10 col-xxl-8 pt-5 pt-lg-0 text-white">
+                    <h1><em>2. </em>公司基本面評分</h1>
+                    <p>根據公司基本面，看財務表現與成長性</p>
+                </div>
+                <div class="col-10 col-xxl-8 px-0 form text-white container">
+                    <form action="{{url_for('stock_valuation')}}" method="GET">
+                        <div class="form-group">
+                            <label for="symbol" class="mb-1">股票代號或公司名稱</label>
+                            <input type="text" id="symbol" class="form-control" name="symbol" placeholder="例: Google 或 GOOG" required><br>
+                        </div>
+                        <div class="d-flex flex-row justify-content-center mt-4">
+                            <button type="submit" class="btn btn-primary px-4 mx-2">看評分</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="right" class="col-lg d-flex flex-column justify-content-center align-items-center">
+                {% if symbol_valid and user_input %}
+                    <div class="col-12 col-md-11 col-lg-12 col-xxl-11 px-5 py-5 px-lg-0 py-lg-0"> 
+                        <div class="dark_box_color2 text-white mx-3 px-4 py-5 mb-4">
+                            <h4 class="mb-4">
+                                {% if total_score >= 80 %}
+                                <p>{{company_name}}財務狀況良好，值得投資</p>
+                                {% elif total_score >= 60%}
+                                <p>{{company_name}}財務狀況尚可，可以投資</p>
+                                {% else %}
+                                <p>{{company_name}}財務狀況有疑慮，建議投資前要審慎評估</p>
+                                {% endif %}
+                            </h4>
+                            <h5>綜合評分</h5>
+                            <h3 class="display-4">{{total_score}}</h3>
+                        </div>
+                    <div class="container-fluid">
+                        <div class="row text-white mt-3">
+                            <div class="dark_box_color1 col mx-2 my-2 px-4 py-3">
+                                <h5>成長分數</h5>
+                                <h3 class="display-6">{{growth_score}}</h3>
+                            </div>
+                            <div class="dark_box_color1 col mx-2 my-2 px-4 py-3">
+                                <h5>價值分數</h5>
+                                <h3 class="display-6">{{growth_score}}</h3>
+                            </div>
+                            <div class="dark_box_color1 col mx-2 my-2 px-4 py-3">
+                                <h5>財務表現</h5>
+                                <h3  class="display-6">{{finance_score}}</h3>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="d-flex flex-row justify-content-center mt-4">
-                        <button type="submit" class="btn btn-primary px-4 mx-2">看評分</button>
-                    </div>
-                </form>
-            </div>
 
-            <div>
-                {% if symbol_valid and user_input %}
-                    <h3>{{company_name}}的財報評分</h3><br>
-                    <div id="result" class="w-50 text-white text-start text-body bg-white bg-opacity-75 rounded-3 p-5">
-                    <div class="text-center">
-                        <h2>總分：{{total_score}}</h2>
-                        {% if total_score >= 80 %}
-                        <p>此股票財務狀況良好，值得投資</p>
-                        {% elif total_score >= 60%}
-                        <p>此股票財務狀況尚可，可以投資</p>
-                        {% else %}
-                        <p>此股票財務狀況有疑慮，建議投資前要審慎評估</p>
-                        {% endif %}
-                    
+                    {% elif symbol_valid == False and user_input %}
+                        <div class="text-center px-5 py-5 px-lg-0 py-lg-0">
+                            <h3>輸入的股票代號或公司名稱有誤，請重新檢查</h3>
+                            <h4>{{user_input}}</h4> 
+                        </div>
                     </div>
-                    <table class="table table-borderless">
-                        <thead>
-                            <tr>
-                                <th scope="col">成長分數</th>
-                                <th scope="col">價值分數</th>
-                                <th scope="col">財務表現</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <th scope="col">{{growth_score}}</th>
-                                <th scope="col">{{value_score}}</th>
-                                <th scope="col">{{finance_score}}</th>
-                            </tr>
-                        </tbody>
-                    </table>
-                
-
-                {% elif symbol_valid == False and user_input %}
-                    <h3>輸入的股票代號或公司名稱有誤，請重新檢查</h3>
-                    {{user_input}}
                 {% endif %}
-
             </div>
-
-
         </div>
     </div>
 
