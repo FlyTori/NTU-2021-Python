@@ -91,7 +91,7 @@
                 {% endif%}
 
                 {% if companies_result and empty_symbol|length == 0 %}
-                    <div class="col-12 col-md-11 col-lg-12 col-xxl-11 px-5 py-5 px-lg-0 py-lg-0">
+                    <div class="col-12 col-md-11 col-lg-12 col-xxl-11 px-3 py-5 px-lg-0 py-lg-0">
                         <div class="mx-4">
                         {% if total_change>0 and total_IRR> 0 %}
                             <h3>恭喜你！總報酬率{{total_change}}%，年化報酬率{{total_IRR}}％</h3>
@@ -104,48 +104,50 @@
                         {% endif %}
                         </div>
                         
-                        <div class="container text-left">
+                        <div class="container-fluid text-left">
                             <div class="row justify-content-start mb-4 text-white">
-                                <div class="dark_box_color1 bg_main col col-xxl-4 mx-2 px-4 py-3">
+                                <div class="dark_box_color1 bg_main col col-xxl-4 mx-2 px-4 py-3 mb-2">
                                     <p>起始投資金額<br>{{start_time}}</p>
                                     <h3 class="">{{total_start_value}}</h3>
                                 </div>
-                                <div class="dark_box_color2 bg_main col col-xxl-4 mx-2 px-4 py-3">
+                                <div class="dark_box_color2 bg_main col col-xxl-4 mx-2 px-4 py-3 mb-2">
                                     <p>最終金額<br>{{end_time}}</p>
                                     <h3 class="">{{total_end_value}}</h3>
                                 </div>
                             </div>
                         </div>
 
-                        <table class="table table-borderless">
-                            <thead>
-                                <tr>
-                                    <th scope="col"></th>
-                                    <th scope="col">股票代號</th>
-                                    <th scope="col">期初股價</th>
-                                    <th scope="col">期末股價</th>
-                                    <th scope="col">期初投資金額</th>
-                                    <th scope="col">期末投資金額</th>
-                                    <th scope="col">報酬率</th>
-                                    <th scope="col">年化報酬率</th>
-                                </tr>
-                            </thead>
+                        <div class="table-responsive-md">
+                            <table class="table table-borderless">
+                                <thead>
+                                    <tr>
+                                        <th scope="col"></th>
+                                        <th scope="col">股票代號</th>
+                                        <th scope="col">期初股價</th>
+                                        <th scope="col">期末股價</th>
+                                        <th scope="col">期初投資金額</th>
+                                        <th scope="col">期末投資金額</th>
+                                        <th scope="col">報酬率</th>
+                                        <th scope="col">年化報酬率</th>
+                                    </tr>
+                                </thead>
 
-                            <tbody>
-                                {% for company in companies_result %}
-                                <tr>
-                                    <th scope="row"></th>
-                                    <td>{{company["company_name"]}}</td>
-                                    <td>{{company["start_price"]}}</td>
-                                    <td>{{company["end_price"]}}</td>
-                                    <td>{{company["start_value"]}}</td>
-                                    <td>{{company["end_value"]}}</td>
-                                    <td>{{company["change"]}}%</td>
-                                    <td>{{company["IRR"]}}%</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                <tbody>
+                                    {% for company in companies_result %}
+                                    <tr>
+                                        <th scope="row"></th>
+                                        <td>{{company["company_name"]}}</td>
+                                        <td>{{company["start_price"]}}</td>
+                                        <td>{{company["end_price"]}}</td>
+                                        <td>{{company["start_value"]}}</td>
+                                        <td>{{company["end_value"]}}</td>
+                                        <td>{{company["change"]}}%</td>
+                                        <td>{{company["IRR"]}}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
 
                         
                     </div>  
