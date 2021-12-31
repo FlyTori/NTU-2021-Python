@@ -21,7 +21,7 @@
                     <form action="{{url_for('stock_valuation')}}" method="GET">
                         <div class="form-group">
                             <label for="symbol" class="mb-1">股票代號或公司名稱</label>
-                            <input type="text" id="symbol" class="form-control" name="symbol" placeholder="例: Google 或 GOOG" required><br>
+                            <input type="text" id="symbol" class="form-control" name="symbol" placeholder="例: Apple 或 AAPL" required><br>
                         </div>
                         <div class="d-flex flex-row justify-content-center mt-4">
                             <button type="submit" class="btn btn-primary px-4 mx-2">看評分</button>
@@ -54,7 +54,7 @@
                             </div>
                             <div class="dark_box_color1 col mx-2 my-2 px-4 py-3">
                                 <h5>價值分數</h5>
-                                <h3 class="display-6">{{growth_score}}</h3>
+                                <h3 class="display-6">{{value_score}}</h3>
                             </div>
                             <div class="dark_box_color1 col mx-2 my-2 px-4 py-3">
                                 <h5>財務表現</h5>
