@@ -20,7 +20,7 @@
     font-style: italic;
 }
 
-.btn, .btn:hover, .btn:focus, .btn:active, .btn a{
+.btn, .btn:hover, .btn:focus, .btn:active{
     background-color: #F1A026;
     text-decoration: none;
     border: none;
@@ -30,8 +30,28 @@
     box-shadow: none;
 }
 
+.btn a, .btn a:hover, .btn a:focus, .btn a:active{
+    text-decoration: none;
+    color: #000;
+}
+
 .btn:hover{
-    opacity: 90%;
+    opacity: 85%;
+}
+
+.btn-secondary, .btn-secondary:hover, .btn-secondary:focus, .btn-secondary:active{
+    background-color: #333333;
+    text-decoration: none;
+    border: #FFF 1px solid;
+    color: #FFF;
+    font-weight: 500;
+    font-size: 1.2rem;
+    box-shadow: none;
+}
+
+.btn-secondary a, .btn-secondary a:hover, .btn-secondary a:focus, .btn-secondary a:active{
+    text-decoration: none;
+    color: #FFF;
 }
 
 

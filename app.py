@@ -225,4 +225,4 @@ def stock_valuation():
             
 
 if __name__ == "__main__": ###如果以主程式執行
-    app.run()  ###立即啟動伺服器
+    app.run(debug=True)  ###立即啟動伺服器
