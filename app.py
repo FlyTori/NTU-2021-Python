@@ -112,7 +112,7 @@ def companies_return(form):
     "end_time": end_time,
     "total_start_value": total_start_value,
     "companies": companies,
-    "total_end_value": total_end_value,
+    "total_end_value": int(total_end_value), #去小數點
     "portion": portion,
     "total_change": round((total_end_value - total_start_value)/total_start_value * 100, 2),
     "total_IRR": round(total_IRR, 2),
